@@ -1,0 +1,38 @@
+--Query 1: joining tables and creating temp tables for data to be queried in Tableau or PowerBI
+
+--Create temp table and union all tables
+WITH hotels AS (
+SELECT * FROM dbo.['2018$']
+UNION
+SELECT * FROM dbo.['2018$']
+UNION
+SELECT * FROM dbo.['2020$'])
+
+--Store temp table into new table, preparing for joins
+SELECT *
+INTO hotel_data
+FROM hotels
+
+--Join market segment table
+SELECT * FROM hotel_data
+LEFT JOIN dbo.market_segment$
+ON hotel_data.market_segment = dbo.market_segment$.market_segment
+
+--Join meal cost table
+LEFT JOIN dbo.meal_cost$
+ON hotel_data.meal = dbo.meal_cost$.meal
+
+
+--Query 2: data exploration and finding KPIs
+
+--Average daily rate of all rooms, by hotel type
+SELECT ROUND(AVG(adr),2) AS average_daily_rate, hotel
+FROM hotel_data
+GROUP BY hotel
+
+--Finding profit after accounting for ADR and customer discount rates
+SELECT h.arrival_date_year, h.hotel, SUM(h.stays_in_weekend_nights + h.stays_in_week_nights)*h.adr - SUM(h.stays_in_weekend_nights + h.stays_in_week_nights)*m.Discount AS profit
+FROM hotel_data h, market_segment$ m
+LEFT JOIN market_segment$
+ON m.market_segment = hotel_data.market_segment
+GROUP BY 1, 2
